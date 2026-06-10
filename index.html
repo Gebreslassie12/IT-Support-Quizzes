@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IT Support Quizzes</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#1e293b">
+    <style>
+        :root {
+            --primary: #2563eb;
+            --bg: #0f172a;
+            --surface: #1e293b;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #10b981;
+            --error: #ef4444;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding-bottom: 60px; }
+        
+        header {
+            background-color: var(--surface);
+            padding: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.3);
+        }
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .lang-option {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            border: 1px solid var(--text-muted);
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+        .app-title { font-size: 1.3rem; font-weight: bold; }
+
+        /* Horizontally Scrollable Unit Tabs */
+        .units-nav {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            white-space: nowrap;
+            padding: 5px 0 10px 0;
+            scrollbar-width: none;
+        }
+        .units-nav::-webkit-scrollbar { display: none; }
+        .unit-tab {
+            background: var(--bg);
+            color: var(--text-muted);
+            border: 1px solid var(--text-muted);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: 500;
+            flex: 0 0 auto;
+            transition: all 0.2s ease;
+        }
+        .unit-tab.active {
+            background: var(--primary);
+            color: var(--text);
+            border-color: var(--primary);
+        }
+
+        .container { max-width: 650px; margin: 20px auto; padding: 0 15px; }
+        .quiz-card {
+            background: var(--surface);
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+        }
+        
+        /* Progress System */
+        .progress-bar-container {
+            background: var(--bg);
+            border-radius: 10px;
+            height: 8px;
+            width: 100%;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            background: var(--primary);
+            height: 100%;
+            width: 2%;
+            transition: width 0.3s ease;
+        }
+        .quiz-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 15px;
+        }
+
+        .question-text { font-size: 1.1rem; margin-bottom: 15px; line-height: 1.5; min-height: 60px; }
+        .options-list { display: flex; flex-direction: column; gap: 10px; }
+        
+        .btn, .option-btn {
+            color: var(--text);
+            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px 15px;
+            border-radius: 8px;
+            text-align: left;
+            cursor: pointer;
+            font-size: 1rem;
+            background: var(--bg);
+            transition: background 0.2s, border-color 0.2s;
+            width: 100%;
+        }
+        .option-btn:hover { background: rgba(255,255,255,0.05); }
+        .option-btn.correct { background: var(--success) !important; border-color: var(--success); color: white; }
+        .option-btn.wrong { background: var(--error) !important; border-color: var(--error); color: white; }
+        
+        .btn {
+            background: var(--primary);
+            text-align: center;
+            font-weight: bold;
+            border: none;
+            display: block;
+            margin-top: 15px;
+        }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .pwa-install-btn { background: #10b981; margin-bottom: 15px; }
+
+        /* Conditional Layout Viewboxes */
+        .results-view, .review-view { display: none; background: var(--surface); padding: 25px; border-radius: 12px; }
+        .score-badge { font-size: 2.5rem; font-weight: bold; color: var(--success); text-align: center; margin: 15px 0; }
+        .tier-text { text-align: center; font-size: 1.2rem; margin-bottom: 20px; font-weight: 500; }
+
+        .donation-box {
+            margin-top: 30px;
+            background: linear-gradient(135deg, #1e1b4b, #311042);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .telebirr-btn {
+            background: #00adef;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            display: inline-block;
+            margin: 12px 0;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        
+        .review-item {
+            background: var(--bg);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+        }
+        .review-q { font-weight: bold; margin-bottom: 5px; }
+        .review-a { color: var(--success); font-size: 0.95rem; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-top">
+        <div class="app-title">IT Support Quizzes</div>
+        <div class="lang-option">🌐 English</div>
+    </div>
+    <div class="units-nav" id="unitsNav">
+        <div class="unit-tab active" onclick="switchUnit(1)">1. Info Systems</div>
+        <div class="unit-tab" onclick="switchUnit(2)">2. Emerging Tech</div>
+        <div class="unit-tab" onclick="switchUnit(3)">3. Database Systems</div>
+        <div class="unit-tab" onclick="switchUnit(4)">4. Web Authoring</div>
+        <div class="unit-tab" onclick="switchUnit(5)">5. Maintenance & Troubleshoot</div>
+        <div class="unit-tab" onclick="switchUnit(6)">6. Programming</div>
+    </div>
+</header>
+
+<div class="container" id="quizContainer">
+    <button id="installBtn" class="btn pwa-install-btn" style="display:none;">📲 Install App Natively (Offline)</button>
+    
+    <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progressFill"></div>
+    </div>
+    
+    <div class="quiz-meta">
+        <span id="questionCount">Question 1 of 50</span>
+        <span id="topicName">Information Systems</span>
+    </div>
+
+    <div class="question-text" id="questionText">Loading quiz questions data structures...</div>
+    <div class="options-list" id="optionsList"></div>
+
+    <div class="control-panel">
+        <button class="btn" id="nextBtn" onclick="handleNext()" disabled>Next Question</button>
+    </div>
+</div>
+
+<div class="container results-view" id="resultsContainer">
+    <h2>Quiz Performance Metrics</h2>
+    <div class="score-badge" id="scoreDisplay">0 / 50</div>
+    <div class="tier-text" id="tierDisplay">Processing...</div>
+    
+    <button class="btn" onclick="showReview()">Review Core Answer Key</button>
+    <button class="btn" style="background:#4b5563; margin-top:10px;" onclick="resetQuiz()">Restart Topic</button>
+
+    <div class="donation-box">
+        <p style="font-weight: 600;">Support the ongoing educational system development framework:</p>
+        <a href="tel:*806*0946911419*10#" class="telebirr-btn">
+            📱 Encourage Developer (Telebirr 10 ETB)
+        </a>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">Launches native dialer framework with target sequence string: *806*0946911419*10#</p>
+    </div>
+</div>
+
+<div class="container review-view" id="reviewContainer">
+    <h2>Answers Assessment Key</h2>
+    <div id="reviewList" style="margin: 20px 0; max-height: 450px; overflow-y: auto; padding-right: 5px;"></div>
+    <button class="btn" onclick="backToResults()">Back to Summary</button>
+</div>
+
+<script>
+// High-Density Integrated 300 Multiple-Choice Object Matrix Database
+const questionsPool = {
+    1: [
+        { q: "Which of the following components of an Information System is responsible for coordinating and controlling the hardware components?", o: ["System software", "Application software", "Data warehouse", "Telecommunications network"], a: 0 },
+        { q: "A Transaction Processing System (TPS) is primarily designed to support which level of management decision-making?", o: ["Strategic level", "Operational level", "Tactical level", "Executive level"], a: 1 },
+        { q: "In an Enterprise Resource Planning (ERP) architecture, what is the primary benefit of a centralized database?", o: ["Reduction of operational hardware costs", "Elimination of data redundancy and inconsistent silos", "Automated creation of external marketing strategies", "Optimization of local localized file storage algorithms"], a: 1 },
+        { q: "Which model describes an information system that mimics the human thought and reasoning process to solve complex analytical problems?", o: ["Decision Support System (DSS)", "Expert System (ES)", "Executive Information System (EIS)", "Management Information System (MIS)"], a: 1 },
+        { q: "What type of information system is optimized specifically for querying, analyzing, and synthesizing large volumes of historical aggregated data?", o: ["Online Transaction Processing (OLTP)", "Online Analytical Processing (OLAP)", "Customer Relationship Management (CRM)", "Supply Chain Management (SCM)"], a: 1 },
+        { q: "An information system that integrates data from multiple internal and external applications to provide senior executives with high-level summaries is a:", o: ["TPS", "MIS", "EIS", "DSS"], a: 2 },
+        { q: "Which architectural paradigm allows distinct applications within an enterprise information system to communicate via loose coupling and standardized interfaces?", o: ["Monolithic Architecture", "Service-Oriented Architecture (SOA)", "Peer-to-Peer Architecture", "Centralized Mainframe Architecture"], a: 1 },
+        { q: "The 'Bullwhip Effect' in Supply Chain Management systems is primarily caused by:", o: ["Information asymmetry and lack of data sharing among supply chain tiers", "High manufacturing throughput speeds", "Over-reliance on cloud computing infrastructure", "Incompatibilities in database schemas between suppliers"], a: 0 },
+        { q: "Which of the following best describes a Geographic Information System (GIS)?", o: ["A system that schedules geographic logistics for transport staff", "An information system designed to capture, store, manipulate, analyze, and present spatial or geographic data", "A relational database that tracks international employee relocations", "A satellite tracking network used only for hardware synchronization"], a: 1 },
+        { q: "In information systems development, the 'Waterfall Model' is characterized by:", o: ["Continuous iterative prototyping cycles", "A sequential, linear progression through distinct development phases", "Concurrent development of front-end and back-end services without documentation", "The deployment of microservices directly into production systems"], a: 1 },
+        { q: "What is the primary role of a Knowledge Management System (KMS) within an organization?", o: ["To monitor real-time network transaction rates", "To capture, structure, store, and disseminate intellectual assets and institutional knowledge", "To replace operational-level databases with unstructured text files", "To automate financial accounting reports"], a: 1 },
+        { q: "Which mechanism ensures data integrity across an enterprise system by verifying that all dependent transactions succeed or fail together?", o: ["Data normalization", "Two-Phase Commit Protocol", "Asynchronous messaging queues", "Distributed caching"], a: 1 },
+        { q: "A system that tracks interactions between an organization and its customers across multiple channels is classified as a:", o: ["SCM System", "ERP System", "CRM System", "MIS System"], a: 2 },
+        { q: "Which concept refers to the practice of using information systems to gain a sustainable marketplace advantage over competitors?", o: ["Operational alignment", "Strategic Information Systems", "Tactical data processing", "Business process reengineering"], a: 1 },
+        { q: "What does the 'V' model in information systems development emphasize?", o: ["High velocity deployment metrics", "A direct, symmetrical mapping between each development phase and its corresponding testing phase", "Virtualization of the production environment during coding", "Visual prototyping tools for user interface validation"], a: 1 },
+        { q: "In an information system, metadata is best defined as:", o: ["Encrypted transport layer security data", "Data that describes the structure, context, and meaning of other data", "Large unorganized binary large objects (BLOBs)", "Redundant backups stored off-site"], a: 1 },
+        { q: "Which type of system coordinates business processes to physically move raw materials, intermediate goods, and finished products to customers?", o: ["DSS", "SCM", "CRM", "KMS"], a: 1 },
+        { q: "An Information Systems Audit is primarily designed to:", o: ["Maximize the speed of transaction processing", "Evaluate the system's internal controls, security posture, and data integrity safeguards", "Refactor inefficient application code to optimize memory consumption", "Install updated operating system patches across client devices"], a: 1 },
+        { q: "What type of analytical model is used in a Decision Support System to determine how a change in one independent variable affects a dependent outcome?", o: ["Goal-seeking analysis", "What-if analysis", "Optimization analysis", "Sensitivity analysis"], a: 1 },
+        { q: "The concept of 'Disintermediation' enabled by e-commerce information systems involves:", o: ["Adding extra layers of wholesale distributors to a supply chain", "Eliminating intermediary agents or distributors from the supply chain to connect producers directly with consumers", "Encrypting consumer billing information across intermediary nodes", "Migrating transaction databases to cloud-hosted object stores"], a: 1 },
+        { q: "Which metric measures the percentage of time an information system remains operational and accessible to authorized users?", o: ["Latency", "Throughput", "Availability", "Scalability"], a: 2 },
+        { q: "What is the main function of an Office Automation System (OAS)?", o: ["Executing deep learning neural networks on corporate servers", "Enhancing the workflow and communications among data workers by supporting word processing, scheduling, and communication", "Automating data warehouse extraction routines", "Managing hardware configurations for high-availability clusters"], a: 1 },
+        { q: "In the context of Information Systems security, what does the principle of 'Least Privilege' mandate?", o: ["Users should have no passwords assigned to maximize access speed", "Users must be granted only the minimum access privileges necessary to perform their specific job functions", "All system administrators must share a single master credential set", "Privileges are allocated based on seniority rather than operational need"], a: 1 },
+        { q: "Which phase of the Systems Development Life Cycle (SDLC) involves defining the organizational problem, establishing project boundaries, and performing a feasibility study?", o: ["System Analysis", "System Planning and Initiation", "System Design", "System Implementation"], a: 1 },
+        { q: "A decentralized ledger system that records transactions across multiple independent nodes without a central authority is called:", o: ["Distributed Relational Database System", "Blockchain Technology", "Network Attached Storage", "Enterprise Service Bus"], a: 1 },
+        { q: "Which type of feasibility assessment determines if an organization possesses the technical resources and expertise to construct a proposed system?", o: ["Economic Feasibility", "Technical Feasibility", "Operational Feasibility", "Legal Feasibility"], a: 1 },
+        { q: "A system that uses artificial intelligence to analyze unstructured data streams from social media to assess market trends is an example of:", o: ["Operational TPS", "Business Intelligence (BI) System", "Transaction Log Analyzer", "Electronic Data Interchange (EDI)"], a: 1 },
+        { q: "What is the primary objective of Business Process Reengineering (BPR)?", o: ["Incrementally patching legacy software components", "The fundamental rethinking and radical redesign of business processes to achieve dramatic performance improvements", "Moving on-premise hardware infrastructure to public cloud service providers", "Upgrading database schemas to support object-oriented types"], a: 1 },
+        { q: "Which architectural layer of an information system handles the presentation of data to the end-user and accepts user inputs?", o: ["Application Layer", "UI / Presentation Layer", "Data Storage Layer", "Transport Layer"], a: 1 },
+        { q: "What is the key limitation of early Legacy Information Systems?", o: ["Rigid, siloed architectures that are difficult to integrate with modern web-based applications", "Over-reliance on visual, drag-and-drop user interfaces", "Built-in compliance with contemporary data privacy regulations", "Use of highly distributed microservices frameworks"], a: 0 },
+        { q: "In information security, the term 'Non-repudiation' means:", o: ["A system cannot be altered by unauthorized malicious software", "A sender cannot deny having sent a specific message or executed a specific transaction", "Data is accessible even during complete network infrastructure failures", "Database records are normalized to the Third Normal Form"], a: 1 },
+        { q: "Which system model utilizes continuous feedback loops to dynamically adjust system performance against predefined benchmarks?", o: ["Open-loop system", "Closed-loop system", "Deterministic manual system", "Static structural system"], a: 1 },
+        { q: "What is the purpose of an Electronic Data Interchange (EDI) system?", o: ["Streamlining video conferencing streams between global offices", "Structuring and automating the electronic transmission of business documents between different organizations", "Backing up relational database management systems via fiber optic cables", "Hosting web-based consumer storefronts"], a: 1 },
+        { q: "Which framework focuses specifically on governance and management IT services, aligning business objectives with IT infrastructure components?", o: ["Agile / Scrum", "COBIT (Control Objectives for Information and Related Technology)", "Six Sigma", "Open Web Application Security Project (OWASP)"], a: 1 },
+        { q: "An information system that collects data from smart IoT sensors across a factory floor to monitor machine health is categorized as a:", o: ["Strategic executive dashboard", "Industrial Control System (ICS) / Process Control System", "Management Reporting System", "Decision support simulation engine"], a: 1 },
+        { q: "The critical path method (CPM) in information systems project management is used to identify:", o: ["The lowest cost hardware vendors", "The sequence of dependent tasks that determines the shortest possible duration to complete a project", "The database tables with the highest number of relational joins", "The lines of code containing syntax errors"], a: 1 },
+        { q: "What type of data loss prevention (DLP) strategy focuses on tracking data when it is actively being processed by system CPUs and RAM?", o: ["Data in transit protection", "Data in use protection", "Data at rest protection", "Data in archival protection"], a: 1 },
+        { q: "Which strategy involves completely replacing an old legacy information system with a new system across the entire organization instantly on a chosen date?", o: ["Phased implementation", "Direct cutover (Plunge strategy)", "Pilot implementation", "Parallel implementation"], a: 1 },
+        { q: "What type of testing evaluates an entire, fully integrated information system to verify that it meets all specified functional and performance criteria?", o: ["Unit testing", "System testing", "Integration testing", "Component testing"], a: 1 },
+        { q: "A system that provides interactive, multidimensional data modeling environments for financial analyst forecasting is a:", o: ["TPS", "DSS", "SCM", "OAS"], a: 1 },
+        { q: "Which concept refers to the gap between individuals and communities who have access to modern information systems and those who do not?", o: ["Information overload", "Digital divide", "Bandwidth variance", "Access latency"], a: 1 },
+        { q: "The 'Data-Information-Knowledge-Wisdom' (DIKW) hierarchy states that data becomes information when it is:", o: ["Stored in a raw database binary format", "Contextualized, structured, and given meaning", "Applied practically to make automated corporate decisions", "Formatted into a web-authoring stylesheet"], a: 1 },
+        { q: "Which architectural component acts as an intermediary router and translator between disparate, legacy applications within an enterprise ecosystem?", o: ["Data Mart", "Enterprise Service Bus (ESB)", "Relational Database Management System", "Local Area Network Hub"], a: 1 },
+        { q: "What type of information system security control involves physical mechanisms like biometric locks, security badges, and physical fences?", o: ["Logical control", "Physical control", "Administrative control", "Cryptographic control"], a: 1 },
+        { q: "In Agile systems development, a brief, daily meeting where the development team reviews progress, planned tasks, and impediments is called a:", o: ["Sprint Retrospective", "Daily Stand-up", "Product Backlog Refinement", "Sprint Planning Session"], a: 1 },
+        { q: "Which design pattern separates an information system application into three interconnected components: data representation, user interface control, and core logic?", o: ["Client-Server Pattern", "Model-View-Controller (MVC) Pattern", "Microservices Pattern", "Pipe-and-Filter Pattern"], a: 1 },
+        { q: "What is the primary disadvantage of using a parallel implementation strategy when deploying a new enterprise information system?", o: ["Extremely high risk of system failure", "High operational costs and double effort from running two systems simultaneously", "Total lack of rollback options if errors occur", "Minimal involvement of end-users during the testing cycle"], a: 1 },
+        { q: "Which document explicitly defines the performance levels, uptime guarantees, and response times required from an external information system service provider?", o: ["Request for Proposal (RFP)", "Service Level Agreement (SLA)", "Non-Disclosure Agreement (NDA)", "System Requirement Specification (SRS)"], a: 1 },
+        { q: "A decision-making structure where rules are explicitly hardcoded using IF-THEN conditions within an information system module is an example of:", o: ["Neural network reasoning", "Rule-based expert system architecture", "Unsupervised clustering", "Heuristic semantic mapping"], a: 1 },
+        { q: "Which index measures an information system's structural ability to scale up or out gracefully to handle sudden, massive spikes in transactional user traffic?", o: ["System Availability", "Elasticity / Scalability", "Mean Time to Repair", "Data Throughput Density"], a: 1 }
+    ],
+    2: [
+        { q: "What is the primary algorithmic mechanism that enables Generative Pre-trained Transformers (GPT) to process long-range dependencies in text sequences?", o: ["Recurrent neural network loops", "Self-Attention mechanism", "Convolutional pooling filters", "Stochastic gradient descent updates"], a: 1 },
+        { q: "In quantum computing, what principle allows a quantum bit (qubit) to exist in multiple state configurations simultaneously?", o: ["Quantum Entanglement", "Quantum Superposition", "Quantum Tunneling", "Quantum Decoherence"], a: 1 },
+        { q: "Which consensus mechanism relies on participants allocating physical hard drive storage space rather than computational processing power to validate blockchain blocks?", o: ["Proof of Work (PoW)", "Proof of Space / Proof of Capacity", "Proof of Stake (PoS)", "Delegated Proof of Stake (DPoS)"], a: 1 },
+        { q: "What is the main objective of Edge Computing within an Internet of Things (IoT) ecosystem?", o: ["Centralizing all raw sensor data in a single public cloud region", "Processing data closer to the network edge where it is generated to minimize latency and bandwidth utilization", "Implementing dense cryptographic hashing on localized mobile terminals", "Eliminating the need for any local network gateway routers"], a: 1 },
+        { q: "Which layer of a decentralized Web3 architecture is responsible for executing self-enforcing programmatic agreements without human intermediaries?", o: ["Presentation layer stylesheets", "Smart contract layer", "Distributed peer-to-peer file routing layer", "Centralized API gateway layer"], a: 1 },
+        { q: "What type of artificial intelligence algorithm learns optimal behaviors by interacting with an environment and receiving rewards or penalties?", o: ["Supervised Learning", "Reinforcement Learning", "Unsupervised Clustering", "Semi-supervised classification"], a: 1 },
+        { q: "In augmented reality (AR) systems, what technological process tracks environmental geometry and anchors virtual objects to physical spaces in real time?", o: ["Ray tracing", "Simultaneous Localization and Mapping (SLAM)", "Spatial anti-aliasing", "Chromatic aberration compensation"], a: 1 },
+        { q: "Which emerging wireless standard utilizes millimeter-wave frequencies, massive MIMO, and network slicing to deliver ultra-reliable, low-latency communication?", o: ["Wi-Fi 6E", "5G / 6G Cellular Networks", "Bluetooth Low Energy 5.3", "Zigbee Long Range"], a: 1 },
+        { q: "What is the primary role of a 'Zero-Knowledge Proof' (ZKP) in modern cryptographic and blockchain systems?", o: ["Compressing data to reduce file system size", "Allowing one party to prove to another that a statement is true without revealing any information beyond the statement's validity", "Accelerating network routing speeds across multi-hop networks", "Forcing hardware nodes to perform complex mathematical processing to secure networks"], a: 1 },
+        { q: "Which architectural trend involves constructing software applications as independent, fine-grained, loosely-coupled deployable units that communicate via lightweight APIs?", o: ["Monolithic architecture", "Microservices architecture", "Serverless infrastructure computing", "Service-oriented service-mesh"], a: 1 },
+        { q: "In 3D printing and digital manufacturing, what does Stereolithography (SLA) utilize to cure liquid photopolymer resins into solid components?", o: ["High-pressure thermoplastic extrusion heads", "Focused ultraviolet (UV) laser beams", "Electron beam powder melting fields", "Binder jetting chemical droplets"], a: 1 },
+        { q: "What type of neural network is fundamentally designed to process structured grids of data, such as digital images or video frames?", o: ["Recurrent Neural Network (RNN)", "Convolutional Neural Network (CNN)", "Long Short-Term Memory (LSTM) Network", "Feedforward Perceptron Network"], a: 1 },
+        { q: "In cloud computing, 'Serverless Computing' (FaaS) is characterized by which architectural property?", o: ["Developers must provision physical bare-metal hardware servers manually", "The cloud provider automatically manages the infrastructure, scaling resources dynamically, and charging only for executed computing time", "Virtual machines run continuously regardless of whether request loads exist", "Complete elimination of all back-end software logic requirements"], a: 1 },
+        { q: "Which specialized processing hardware is engineered with thousands of matrix-multiplier units optimized specifically for training deep learning models?", o: ["Central Processing Unit (CPU)", "Tensor Processing Unit (TPU) / Graphical Processing Unit (GPU)", "Complex Programmable Logic Device (CPLD)", "Static Random Access Memory (SRAM) controller"], a: 1 },
+        { q: "What is a 'Digital Twin' in modern industrial technology applications?", o: ["A redundant backup server that mirrors production databases", "A virtual, real-time digital replica of a physical asset, process, or system powered by IoT sensor data", "A dual-lens camera system used for biometric facial recognition", "An exactly duplicated software package deployed across two regional clouds"], a: 1 },
+        { q: "Which decentralized file system uses content-addressing to store and share data across a global peer-to-peer network, serving as a core component of Web3?", o: ["Network File System (NFS)", "InterPlanetary File System (IPFS)", "Hadoop Distributed File System (HDFS)", "Storage Area Network (SAN) system"], a: 1 },
+        { q: "The concept of 'Explainable AI' (XAI) addresses what common limitation of deep neural networks?", o: ["High computational latency during training optimization", "The 'black box' problem, where internal algorithmic pathways are too complex for humans to discern how specific decisions are derived", "Inability to process unstructured alphanumeric characters", "High electrical power footprints on processing units"], a: 1 },
+        { q: "What technology enables autonomous vehicles to measure distances to surrounding solid obstacles by pulsing laser beams and calculating flight times?", o: ["Sonar detection grids", "LiDAR (Light Detection and Ranging)", "Infrared proximity loops", "Doppler radio radar tracking"], a: 1 },
+        { q: "Which biographical authentication protocol utilizes unique, involuntary neurological patterns to verify entity identities?", o: ["Retinal vascular scans", "Brainwave signature analysis (EEG metrics)", "Fingerprint minutiae maps", "Dynamic behavioral typing rhythms"], a: 1 },
+        { q: "In decentralized systems, a 'Sybil Attack' describes what malicious scenario?", o: ["A single attacker floods network pipes with massive volumes of useless packets", "A single adversary node creates a vast number of pseudonymous arbitrary identities to gain disproportionate control of a network", "Intercepting data packets at the physical routing layers", "Injecting rogue structured query strings into input form windows"], a: 1 },
+        { q: "What is the primary operational function of a Smart Contract?", o: ["Providing legal advice during technology procurement routines", "Executing immutable programmatic logic automatically on-chain when predefined computational conditions are verified", "Encrypting communication pipelines between application servers", "Generating visual dashboard widgets for distributed networks"], a: 1 },
+        { q: "In virtual reality hardware, 'Screen Door Effect' refers to what visual anomaly?", o: ["Lag in refreshing pixels when users rotate their heads fast", "The fine grid lines between individual display pixels becoming visible to the user's eye due to low resolution density", "Distortions around the outer lenses of headsets", "Inconsistencies in color balance across different displays"], a: 1 },
+        { q: "What processing framework allows massive datasets to be distributed and computed across thousands of commodity hardware nodes concurrently?", o: ["Hadoop / Apache Spark", "Relational SQL Engines", "Monolithic compilation blocks", "Synchronous transaction layers"], a: 0 },
+        { q: "Which emerging storage standard utilizes synthetic biology structures to archive digital data at densities far exceeding physical hard drives?", o: ["Holographic crystal arrays", "DNA Data Storage", "Spintronic magnetic memories", "Quantum storage cell blocks"], a: 1 },
+        { q: "The term 'Metaverse' refers fundamentally to which technological environment?", o: ["A private internal corporation database network", "An integrated, persistent network of 3D virtual worlds and digital ecosystems accessed via immersive hardware interfaces", "The encrypted administrative backup tier of the global internet", "A standard semantic index tracking search behaviors"], a: 1 },
+        { q: "What type of robotic component is responsible for converting electrical energy into physical mechanics or movements?", o: ["Microcontroller logic chip", "Actuator", "Telemetry sensor suite", "Analog-to-digital converter pipeline"], a: 1 },
+        { q: "Which consensus methodology selects blockchain validators based directly on the proportional quantity of native currency tokens they lock up?", o: ["Proof of Work", "Proof of Stake", "Proof of History", "Proof of Authority"], a: 1 },
+        { q: "What problem is optimized using Swarm Intelligence models in robotics and computing systems?", o: ["Centralized cloud resource billing parameters", "Coordinating large teams of simple, decentralized automated agents to solve complex structural tasks through collective self-organization", "Compiling monolithic programming architectures down to native code", "Encrypting database backups against systemic unauthorized accesses"], a: 1 },
+        { q: "In artificial intelligence, 'Transfer Learning' describes what optimized technique?", o: ["Migrating training datasets from on-premise arrays to remote clouds", "Taking a pre-trained model developed for a specific base task and repurposing its learned weights as a starting point for a distinct task", "Translating software instructions automatically across language platforms", "Dividing computing loads between standard processors and graphical units"], a: 1 },
+        { q: "Which biometric identification protocol tracks unique structural features in the colored tissue ring surrounding the eye pupil?", o: ["Retinal scanning", "Iris Recognition", "Facial geometric mapping", "Corneal topography tracking"], a: 1 },
+        { q: "What is the purpose of 'Network Slicing' in modern high-speed cellular networks?", o: ["Dividing a physical cable bundle into smaller individual wire streams", "Multiplexing virtual, isolated end-to-end networks over a single physical infrastructure, tailored to specific service requirements", "Limiting the total internet data download allowances of cellular customers", "Cutting off dead wireless antennas automatically during high winds"], a: 1 },
+        { q: "Which concept involves embedding tiny computing devices and smart sensors seamlessly into everyday objects, enabling them to communicate continuously?", o: ["Centralized Mainframe Computing", "Ubiquitous Computing / Ambient Intelligence", "Siloed Monolithic Architecture", "Batch System processing"], a: 1 },
+        { q: "What type of machine learning model runs input targets through encoder-decoder networks to produce entirely original structural designs or texts?", o: ["Discriminative models", "Generative AI models", "Linear regressions models", "Nearest Neighbor models"], a: 1 },
+        { q: "In blockchain technology, 'Layer 2 Scaling Solutions' primarily aim to solve what core bottleneck?", o: ["The low cryptographic complexity of transaction block hashes", "High transaction processing costs and slow throughput latencies on the primary Layer 1 blockchain network", "The user interface complexity of crypto mobile wallets", "The storage space needed to save transaction logs"], a: 1 },
+        { q: "What specialized manufacturing domain utilizes nanomaterials to manipulate structural matters at structural dimensions between 1 and 100 nanometers?", o: ["Macrotech production", "Nanotechnology", "Cryogenic hardware assembly", "Biochemical fluid casting"], a: 1 },
+        { q: "Which system type uses continuous biological inputs to power prosthetic cybernetic replacement limbs?", o: ["Rule-based mechanical valves", "Brain-Computer Interfaces (BCI) / Myoelectric signal processors", "Static structural logic circuits", "Pneumatic timing switches"], a: 1 },
+        { q: "What is the role of a 'Central Bank Digital Currency' (CBDC)?", o: ["A tokenized asset issued by decentralized public mining nodes", "A digital form of fiat currency issued and fully regulated by a nation's sovereign central banking authority", "An anonymous transaction tool designed to bypass regional taxation", "A software framework for tracking standard equity stocks"], a: 1 },
+        { q: "Which specialized domain focuses on protecting decentralized network devices against algorithmic decryption from quantum processing machines?", o: ["Symmetric AES cryptography", "Post-Quantum Cryptography (PQC)", "Asymmetric RSA key pairs", "Standard hashing protocols"], a: 1 },
+        { q: "What technology allows digital art and media files to establish verifiable ownership and tracking provenance using unique cryptographic signatures on a ledger?", o: ["Symmetric database keys", "Non-Fungible Tokens (NFTs)", "Distributed source control blocks", "Compressed picture file formats"], a: 1 },
+        { q: "In machine learning, 'Overfitting' describes what performance anomaly?", o: ["A model finishes training loop iterations too early without evaluating criteria", "A model learns the training dataset specifics so perfectly that it captures noise, ruining its accuracy on new, unseen data", "The model size is too massive to execute on local mobile devices", "Variable dimensions are too small to map onto dynamic arrays"], a: 1 },
+        { q: "What is the purpose of 'Homomorphic Encryption' within secure cloud computing environments?", o: ["Accelerating the download rates of media files via secure pipes", "Enabling mathematical and computational operations to be performed directly on encrypted data without decrypting it first", "Scrambling text data strings into non-alphanumeric code sequences", "Using physical biometric tokens to unlock security system doors"], a: 1 },
+        { q: "Which advanced technological paradigm uses fluid micro-channels on a single chip to replicate the biological functions of entire human organs?", o: ["Biochemical database logic", "Organs-on-Chips (OoC) / Microfluidic engineering", "Macrofluidic structural arrays", "Digital neural processing grids"], a: 1 },
+        { q: "What is the core function of an Autonomous Decentralized Organization (DAO)?", o: ["A private software enterprise completely managed by single tech CEOs", "An organization governed fully by algorithmic rules encoded as smart contracts and controlled democratically by token holders", "A global web system hosted on single centralized server mainframes", "A hardware manufacturing collective for mobile processing devices"], a: 15 },
+        { q: "In automated driving systems, what does 'Sensor Fusion' achieve?", o: ["Melting down hardware electronic chips to combine raw materials", "Combining data from multiple disparate sensors (like cameras, LiDAR, and radar) to create a highly accurate environmental model", "Configuring power sources to feed multiple wireless sensors simultaneously", "Running database aggregation scripts across cloud platform nodes"], a: 1 },
+        { q: "Which data analytics branch uses statistical modeling and artificial intelligence to predict future enterprise behaviors or market trends?", o: ["Descriptive Analytics", "Predictive Analytics", "Diagnostic Analytics", "Prescriptive Analytics"], a: 1 },
+        { q: "What does 'Low-Code/No-Code' technology democratize within corporate software development?", o: ["The compilation of native software modules into assembly code", "Allowing non-technical business users to build applications using visual, drag-and-drop structural design interfaces", "The physical manufacturing steps of mobile touchscreens", "Optimizing the processing performance of backend server arrays"], a: 1 },
+        { q: "Which system platform acts as a decentralized oracle to feed real-time physical real-world data securely into isolated blockchain smart contracts?", o: ["Centralized REST API routes", "Decentralized Oracle Networks (e.g., Chainlink)", "Local SQL database engines", "Unstructured local data logs"], a: 1 },
+        { q: "What type of technology uses light waves instead of physical electrical wires to carry data across processing modules on computer motherboards?", o: ["Electronic transistor paths", "Silicon Photonics / Optical Computing", "Symmetric copper rails", "Magnetic induction fields"], a: 1 },
+        { q: "In artificial intelligence, what is 'Natural Language Processing' (NLP) optimized to interpret?", o: ["Binary compilation code structures", "Human spoken and written text languages", "Pixel color values within graphical file arrays", "Real-time telemetry feeds from physical robotic joints"], a: 1 },
+        { q: "Which component describes the automated cloud deployment architecture parameter known as 'Infrastructure as Code' (IaC)?", o: ["Writing instruction pamphlets for system engineers", "Managing and provisioning cloud computing infrastructure automatically through machine-readable definition files", "Manually entering server settings in browser admin dashboards", "Compiling programming scripts into fixed firmware hardware modules"], a: 1 }
+    ],
+    3: [
+        { q: "In relational database design, what does the ACID property 'Atomicity' strictly guarantee?", o: ["Data records are guaranteed to be atomic in particle scale size", "A transaction must complete entirely, or none of its modifications are applied to the database at all", "Data values are isolated from multi-user locking adjustments", "Database entries are automatically converted to clean character strings"], a: 1 },
+        { q: "Which normal form requires a database table to be in 1NF, have all non-prime attributes fully functionally dependent on the entire primary key, and have no partial dependencies?", o: ["First Normal Form (1NF)", "Second Normal Form (2NF)", "Third Normal Form (3NF)", "Boyce-Codd Normal Form (BCNF)"], a: 1 },
+        { q: "What type of database index utilizes a balanced tree structure to maintain sorted data pointers, optimizing range query evaluations?", o: ["Hash Index", "B-Tree Index", "Bitmap Index", "Inverted Index"], a: 1 },
+        { q: "Which SQL constraint ensures that a column configuration cannot accept empty references or unallocated data values?", o: ["UNIQUE", "NOT NULL", "CHECK", "FOREIGN KEY"], a: 1 },
+        { q: "In NoSQL database classifications, Apache Cassandra and Bigtable are categorized as what architecture type?", o: ["Document Stores", "Wide-Column / Column-Family Stores", "Key-Value Databases", "Graph Databases"], a: 1 },
+        { q: "What structural operation occurs during a SQL 'LEFT JOIN' clause evaluation?", o: ["Only rows with exact matches in both integrated tables are returned", "All rows from the left table are returned, alongside matched records from the right table, filling mismatches with NULLs", "All records from both source tables are appended sequentially", "Columns are deleted from the database file system storage permanently"], a: 1 },
+        { q: "Which property prevents multi-user transactions from seeing each other's intermediate uncommitted data states, preventing dirty reads?", o: ["Atomicity", "Consistency", "Isolation", "Durability"], a: 2 },
+        { q: "What is the primary function of a Foreign Key within a relational schema layout?", o: ["To establish unique sequential index ranges for local tables", "To enforce referential integrity by linking a column to the primary key of another table", "To encrypt text character vectors before disk archival processing", "To compress historical transaction values to minimize data footprints"], a: 1 },
+        { q: "In database optimization, what is 'Query Refactoring'?", o: ["Rewriting a slow SQL statement to achieve identical results using more efficient operational execution paths", "Deleting redundant indexes from data tables", "Altering the database field types dynamically at execution runtimes", "Backing up transactional files across secure networks"], a: 0 },
+        { q: "Which NoSQL system type is optimized specifically for traversing interconnected entities, like corporate social networks?", o: ["Key-Value Stores", "Graph Databases (e.g., Neo4j)", "Document Databases", "Time-Series Databases"], a: 1 },
+        { q: "What does a 'Database Deadlock' state represent?", o: ["The physical drive space containing data files crashes completely", "Two or more active transaction sessions hold locks on resources and are blocked waiting indefinitely for each other to release their locks", "The security firewall blocks incoming administration login requests", "An index configuration file becomes corrupt during system reboots"], a: 1 },
+        { q: "Which database Normal Form ensures there are no transitive dependencies among non-key attribute configurations?", o: ["1NF", "2NF", "3NF", "4NF"], a: 2 },
+        { q: "What is the operational function of the SQL command 'GROUP BY'?", o: ["Sorting row contents in ascending alphanumeric layouts", "Aggregating rows that have matching column values into summary rows (e.g., computing averages or counts)", "Filtering row outputs using specific text wildcard strings", "Combining data arrays from separate physical disk partitions"], a: 1 },
+        { q: "In a relational database management system (RDBMS), what does a 'Database Transaction Log' provide?", o: ["A public chart displaying user activity metrics", "An absolute sequential record of all modifications made to the database, enabling recovery during system crashes", "A visual layout builder for drawing data tables", "An automated index of all software compiler execution steps"], a: 1 },
+        { q: "What type of data lock restricts concurrent database sessions to read-only access while preventing any write modifications?", o: ["Exclusive Lock", "Shared Lock (Read Lock)", "Intent Lock", "Row-level update lock"], a: 1 },
+        { q: "Which mechanism allows database administrators to split a massive single logical table into separate physical data chunks based on data ranges?", o: ["Database Normalization", "Table Partitioning / Sharding", "Index Reconstruction", "View Virtualization"], a: 1 },
+        { q: "What does the SQL operator 'LIKE' evaluate?", o: ["Mathematical comparisons between float variable items", "Pattern matching within string values using specific wildcard tags (like % or _)", "Exact numeric value equalities across data sets", "Logical boolean exclusions between separate tables"], a: 1 },
+        { q: "In relational theory, what is a 'Composite Primary Key'?", o: ["A temporary primary key generated during query runtimes", "A unique key formed by combining two or more data columns to uniquely identify a single row within a table", "An external key that links to distinct multi-cloud instances", "A compressed data index that targets object-oriented databases"], a: 1 },
+        { q: "Which architectural type describes a NoSQL Document Store database?", o: ["Storing records in structured rows and strict tables", "Storing unstructured or semi-structured data in self-contained document file formats like JSON or BSON", "Mapping points on geometric coordinate grids", "Linking parent-child pointer arrays in rigid file maps"], a: 1 },
+        { q: "What security vulnerability occurs when an application inserts unvalidated user input strings directly into database query statements?", o: ["Cross-Site Scripting (XSS)", "SQL Injection (SQLi)", "Buffer Overflow exploit", "Denial of Service attack"], a: 1 },
+        { q: "What database feature acts as a virtual, read-only table defined by saving a precompiled, complex SQL query?", o: ["Stored Procedure", "View", "Triggers node", "Clustered Index file"], a: 1 },
+        { q: "Which transaction anomaly describes a scenario where a transaction re-reads a data range and discovers new 'phantom' rows inserted by another committed session?", o: ["Dirty Read", "Non-repeatable Read", "Phantom Read", "Lost Update anomaly"], a: 2 },
+        { q: "What type of database index physically dictates the sequential storage order of row data records on the disk?", o: ["Non-clustered Index", "Clustered Index", "Secondary Index", "Spatial Grid Index"], a: 1 },
+        { q: "In database administration, what does a 'Point-in-Time Recovery' (PITR) strategy perform?", o: ["Restoring system configurations to their default baseline states", "Restoring the entire database state to an exact historical minute by replaying transaction logs up to that chosen moment", "Instantly deleting outdated log entries from drive partitions", "Optimizing the processing speeds of specific reporting metrics"], a: 1 },
+        { q: "Which SQL clause is used to filter aggregated data rows generated by a 'GROUP BY' command?", o: ["WHERE", "HAVING", "ORDER BY", "SELECT DISTINCT"], a: 1 },
+        { q: "What type of relationship exists between an 'Authors' table and a 'Books' table, assuming authors write multiple books and books can have multiple co-authors?", o: ["One-to-One", "One-to-Many", "Many-to-Many", "Unary recursive relationship"], a: 2 },
+        { q: "What is the purpose of a Database Trigger?", o: ["Manually launching backup routines from administrative command screens", "A procedural code block that automatically fires and executes in response to specific data modification events (INSERT, UPDATE, DELETE)", "Accelerating data processing workflows across external network links", "Formatting database table text attributes into layout styles"], a: 1 },
+        { q: "Which architecture paradigm separates database query operations from update operations to enhance scaling performance?", o: ["Monolithic transaction schemas", "CQRS (Command Query Responsibility Segregation)", "Standard Relational Normalization", "Distributed key caching layers"], a: 1 },
+        { q: "What does the SQL function 'COALESCE' perform?", o: ["Combines two distinct tables into an integrated schema mapping", "Returns the first non-null value from an ordered list of argument expressions", "Computes the total structural average of a numeric column matrix", "Converts text character sets between alternative encryption profiles"], a: 1 },
+        { q: "In data warehousing, what is the role of an ETL pipeline framework?", o: ["Encrypting, Transporting, and Locking transactional file sectors", "Extracting data from diverse sources, Transforming it into uniform structures, and Loading it into target data stores", "Evaluating, Testing, and Logging application code configurations", "Executing transaction loops across localized database indices"], a: 1 },
+        { q: "Which constraint explicitly maintains data consistency between paired relational tables by blocking orphaned records?", o: ["CHECK constraint", "FOREIGN KEY constraint", "UNIQUE index pattern", "DEFAULT value configuration"], a: 1 },
+        { q: "What is the primary technical trade-off when adding multiple indexes to a high-volume transactional database table?", o: ["Slower data read speeds across all query paths", "Faster read performance, but slower write/insert speeds because indexes must be updated along with the data", "Total loss of database structural integrity consistency profiles", "The database is restricted to processing one query at a time"], a: 1 },
+        { q: "What does 'Data Redundancy' inside an unnormalized database table typically cause?", o: ["Optimized disk space footprint efficiencies", "Data anomalies, inconsistencies, and wasted disk storage space", "Automatic encryption protection against malicious entities", "Sudden performance accelerations in query execution speeds"], a: 1 },
+        { q: "Which SQL statement completely removes a table's structure along with all its data from the database layout?", o: ["DELETE TABLE", "DROP TABLE", "TRUNCATE TABLE", "REMOVE TABLE"], a: 1 },
+        { q: "In relational algebra, what operation extracts specific columns from a relation table structure?", o: ["Selection", "Projection", "Join", "Aggregation"], a: 1 },
+        { q: "What type of database structure holds data entirely in volatile memory (RAM) instead of physical disk drives to deliver ultra-low latency performance?", o: ["Mechanical drive array", "In-Memory Database (e.g., Redis)", "Column-Family Store archive", "Object Storage container"], a: 1 },
+        { q: "What is a 'Database Hint' used for in SQL querying?", o: ["A tooltip displayed in web browser user screens", "An instruction embedded in a SQL statement that overrides the query optimizer's default choice of execution plan", "A security alert signaling potential unauthorized administrative access", "A coding comment explaining what a specific data field stores"], a: 1 },
+        { q: "Which concept refers to a single, logical database configuration deployed as separate instances across independent geographical server locations?", o: ["Monolithic Local Store", "Distributed Database System", "Siloed Relational Partition", "Isolated Sandbox Engine"], a: 1 },
+        { q: "What occurs during a 'Dirty Read' database transaction event?", o: ["An active session reads completely corrupted file chunks from a failing drive", "A transaction reads data modifications that have been written by another concurrent transaction but are not yet committed", "Query statements fail to evaluate because of syntax punctuation flaws", "A session attempts to modify record attributes without proper authorization"], a: 1 },
+        { q: "Which database schema design pattern utilizes a centralized fact table flanked by multiple descriptive dimension tables?", o: ["Snowflake Schema", "Star Schema", "Normalized Third Form Matrix", "Hierarchical Tree Graph"], a: 1 },
+        { q: "What does the SQL command 'TRUNCATE' perform that distinguishes it from a basic 'DELETE' command?", o: ["It removes individual rows matching custom filter criteria", "It instantly removes all rows from a table by deallocating the storage pages, bypassing individual row delete logging", "It deletes the structural table definition from the database permanently", "It updates all data column properties to default state values"], a: 1 },
+        { q: "In database transactions, what does the 'Durability' property promise?", o: ["Data values are verified to match specific validation checks", "Once a transaction is committed, its changes are permanently written to non-volatile storage and will survive any subsequent system crashes", "Transactions are isolated from cross-user modification bottlenecks", "Query processing speeds remain consistent under high user loads"], a: 1 },
+        { q: "What type of database management system is designed specifically to handle spatial data geometries like maps and location coordinates?", o: ["Time-Series DBMS", "Spatial Database / GIS Engine", "Key-Value caching layer", "Document Store repository"], a: 1 },
+        { q: "Which data modeling tool graphically represents data entities, their attributes, and the relational links between them?", o: ["System Flowchart map", "Entity-Relationship Diagram (ERD)", "Data Architecture code block", "Microservices routing diagram"], a: 1 },
+        { q: "What is the role of the 'Query Optimizer' engine inside an RDBMS?", o: ["Formatting column string attributes into readable browser layouts", "Analyzing a SQL statement and selecting the most computationally efficient execution plan based on data statistics", "Checking if user accounts hold correct access permissions", "Running background compressed archival operations on logs"], a: 1 },
+        { q: "Which SQL operator evaluates if a target subquery statement returns any matching data rows?", o: ["LIKE", "EXISTS", "BETWEEN", "IN"], a: 1 },
+        { q: "What does the NoSQL design trade-off baseline theorem known as the 'CAP Theorem' state?", o: ["Systems must balance Code, Architecture, and Performance constraints", "A distributed data system can simultaneously guarantee at most two out of three properties: Consistency, Availability, and Partition Tolerance", "Database encryption loops degrade overall network processing rates", "Adding server memory always eliminates data lock contentions"], a: 1 },
+        { q: "What is the function of a 'Savepoint' within a database transaction block?", o: ["Exporting backup copies of tables across local drives", "Establishing a sub-checkpoint within a transaction, allowing the developer to roll back partial operations without aborting the entire session", "Locking all table rows against administrative adjustments", "Saving the user's interface style selections to disk profiles"], a: 1 },
+        { q: "Which type of replication architecture features data writes processing at a single main node, which then syncs changes to read-only backup nodes?", o: ["Multi-master configuration", "Primary-Secondary (Master-Slave) Replication", "Peer-to-Peer data grid mesh", "Fully decoupled isolated sharding"], a: 1 },
+        { q: "What type of NoSQL database stores data as continuous pairs composed of an identifier key and an uninterpreted data blob?", o: ["Relational Database", "Key-Value Store (e.g., DynamoDB)", "Graph Network", "Wide-column table framework"], a: 1 }
+    ],
+    4: [
+        { q: "Which semantic HTML5 element is specifically designed to enclose independent, self-contained content that could be distributed standalone?", o: ["&lt;section&gt;", "&lt;article&gt;", "&lt;aside&gt;", "&lt;div&gt;"], a: 1 },
+        { q: "In the CSS Box Model, what space parameter sits directly between the element's content box and its outer border line?", o: ["Margin", "Padding", "Outline", "Width bounds"], a: 1 },
+        { q: "Which CSS Flexbox alignment property coordinates layout items along the container's primary horizontal main axis?", o: ["align-items", "justify-content", "align-content", "flex-direction"], a: 1 },
+        { q: "What is the function of the 'async' attribute when embedding an external script via HTML script tags?", o: ["It blocks HTML document parsing until the script file finishes downloading entirely", "It downloads the script asynchronously in the background and executes it the instant it finishes downloading, pausing HTML parsing during execution", "It forces the script to execute only after the entire DOM model is built", "It runs the JavaScript file within a separate worker thread structure"], a: 1 },
+        { q: "Which CSS selector pattern holds the absolute highest layout specificity value, overriding other style definitions?", o: ["Class selector (.item-style)", "ID selector (#unique-item)", "Element selector (div)", "Inline style attribute (style='')"], a: 3 },
+        { q: "In web layout design, what does a responsive 'Media Query' block achieve?", o: ["Queries remote media databases to extract video streaming paths", "Applies specific blocks of CSS styling rules only if the viewing device matches specific viewport dimensions or conditions", "Translates text content strings between distinct regional dialects", "Tracks user viewport clicks for analytics tools"], a: 1 },
+        { q: "Which JavaScript DOM management method targets and extracts the first element matching a specified CSS selector string layout?", o: ["getElementById", "querySelector", "getElementsByClassName", "querySelectorAll"], a: 1 },
+        { q: "What does the HTTP status code '403 Forbidden' explicitly communicate to an querying client browser?", o: ["The target web resource does not exist on the host server", "The client request is valid, but the host server refuses to fulfill it due to missing authentication or permission clearances", "The server is down for scheduled software maintenance updates", "The request syntax is malformed and rejected by api routing layers"], a: 1 },
+        { q: "Which CSS position configuration locks an element relative to the browser viewport window, ensuring it stays visible during page scrolls?", o: ["position: absolute;", "position: fixed;", "position: relative;", "position: static;"], a: 1 },
+        { q: "What is the function of the HTML5 canvas element?", o: ["Embedding external video playback tracks with custom buttons", "Providing a scriptable, pixel-level surface used to draw vector graphics and animations dynamically via JavaScript", "Creating responsive multi-column layout table matrices", "Enabling structural text translations across document regions"], a: 1 },
+        { q: "Which semantic HTML tag is optimized to contain navigation links?", o: ["&lt;div class='nav'&gt;", "&lt;nav&gt;", "&lt;section&gt;", "&lt;header-links&gt;"], a: 1 },
+        { q: "In JavaScript, what is the core operational difference between the '==' and '===' comparison operators?", o: ["'==' compares object references, while '===' compares text properties", "'==' compares values for equality after performing type coercion, whereas '===' strictly checks equality of both value and data type", "'===' is used only within loop structures", "'==' is an assignment command, while '===' handles equality checking"], a: 1 },
+        { q: "Which CSS units dynamically scale relative to the specific font-size configuration of the root html element?", o: ["px", "em", "rem", "vh"], a: 2 },
+        { q: "What type of modern client-side web application capability allows a Progressive Web App (PWA) to run offline?", o: ["CSS Grid styling sheets", "Service Workers intercepting network request fetch loops", "Relational web server APIs", "Localized session storage variables"], a: 1 },
+        { q: "Which HTML attribute specifies an alternative text description for an image if the file fails to load properly?", o: ["title", "alt", "src", "description"], a: 1 },
+        { q: "In advanced CSS Layout techniques, what is the key distinction between Flexbox and CSS Grid?", o: ["Flexbox handles page colors, while CSS Grid manages layout spacing", "Flexbox is designed for one-dimensional layouts (rows OR columns), whereas CSS Grid is tailored for two-dimensional layouts (rows AND columns)", "CSS Grid works only within mobile phone displays", "Flexbox requires JavaScript compilation files to execute layout positioning"], a: 1 },
+        { q: "What does 'Event Bubbling' describe within the JavaScript DOM architecture?", o: ["An error condition that halts script execution lines", "The phenomenon where an event fires on a target element and then sequentially propagates upwards through its parent elements", "Creating randomized animation bubbles using script canvas blocks", "The automated extraction of variables into global memory zones"], a: 1 },
+        { q: "Which HTTP request method is optimized to submit user data payloads to a web server to create a new resource database entry?", o: ["GET", "POST", "HEAD", "OPTIONS"], a: 1 },
+        { q: "What does the 'Cross-Origin Resource Sharing' (CORS) security policy prevent or regulate?", o: ["The injection of malformed query parameters into input forms", "Browsers making restricted HTTP requests to a domain different from the one that served the initial web document", "The execution of asynchronous loop routines inside background script threads", "Unauthorized installations of application packages onto device storage"], a: 1 },
+        { q: "Which property controls the layering order of overlapping elements along the Z-axis in CSS?", o: ["display", "z-index", "position", "opacity"], a: 1 },
+        { q: "What is the role of the Web Storage API method 'localStorage.setItem()'?", o: ["Saving secure encrypted passphrases across institutional databases", "Storing persistent, unencrypted key-value string data directly inside the client browser with no expiration date", "Creating temporary caching arrays that clear when a tab closes", "Uploading client file blocks directly onto public cloud stores"], a: 1 },
+        { q: "Which attribute must be added to a hyperlink tag to force the target URL to load inside a completely new browser tab?", o: ["rel='new'", "target='_blank'", "href='new-tab'", "download"], a: 1 },
+        { q: "What optimization practice does 'Minification' perform on production web authoring asset files?", o: ["Compressing pictures into low-resolution formats", "Removing all unnecessary characters (spaces, line breaks, comments) from code files to minimize file sizes and download speeds", "Restricting the total lines of script elements within documents", "Migrating software blocks onto content distribution networks"], a: 1 },
+        { q: "Which CSS display configuration turns an element into a block-level wrapper that utilizes flexbox layout behaviors?", o: ["display: flex;", "display: inline-flex;", "display: block-flex;", "display: grid;"], a: 0 },
+        { q: "What does the JavaScript mechanism known as a 'Promise' represent?", o: ["A strict compilation rule that blocks variable renaming operations", "An object representing the eventual completion or failure of an asynchronous operation and its resulting value", "A security verification parameter checked during API routing steps", "A function declaration that executes inside hardware processor units"], a: 1 },
+        { q: "In search engine optimization (SEO) practices, what is the purpose of a 'robots.txt' file?", o: ["Preventing malicious hackers from accessing backend administration panels", "Instructing search engine web crawlers which sections and paths of a website they are permitted to scan and index", "Formatting webpage elements into clean responsive text configurations", "Hosting tracking codes for user analytics tools"], a: 1 },
+        { q: "Which HTML5 attribute adds a placeholder instruction string inside an empty input form text window?", o: ["value", "placeholder", "hint", "required"], a: 1 },
+        { q: "What design challenge is solved by adopting a 'Mobile-First' CSS implementation workflow?", o: ["Building distinct software packages for varying smartphone operating systems", "Writing core layout CSS styles optimized for small viewports first, then layering complex layouts for larger screens using media queries", "Preventing mobile devices from using offline caching capabilities", "Eliminating background script files to preserve mobile battery lives"], a: 1 },
+        { q: "Which JavaScript array function processes each element and returns a new array containing only items that satisfy a logical validation true check?", o: ["forEach", "filter", "map", "reduce"], a: 1 },
+        { q: "What does the HTTP header setting 'Cache-Control: no-store' communicate to client devices?", o: ["The target resource contains no database text contents", "Browsers must not save or cache any copy of the returned response, forcing a fresh network download for every request", "The application code is blocked from executing local storage adjustments", "Media components should download inside compressed zip file folders"], a: 1 },
+        { q: "Which HTML element is structurally correct for displaying a numbered list of sequential process instructions?", o: ["&lt;ul&gt;", "&lt;ol&gt;", "&lt;list&gt;", "&lt;dl&gtimpl;"], a: 1 },
+        { q: "In CSS layouts, what occurs when an element is assigned a 'box-sizing: border-box;' configuration property?", o: ["The layout borders are turned invisible across standard browser screens", "The element's total declared width and height calculations will automatically include padding and borders, preventing layout blowouts", "The element is clipped to fit within a circular graphic viewport region", "The margin spacing rules are multiplied by responsive scaling parameters"], a: 1 },
+        { q: "What does a 'JSON' data format structure resemble?", o: ["A sequential string of compiled binary machine instructions", "A text-based format structured around key-value pairs that represents data objects, derived from JavaScript object syntax", "A dense relational table composed of primary and foreign keys", "An unorganized collection of plain alphanumeric text logs"], a: 1 },
+        { q: "Which web layout property hides an element from the screen while maintaining the physical layout space it occupies within the DOM layout flow?", o: ["display: none;", "visibility: hidden;", "opacity: 1;", "position: absolute;"], a: 1 },
+        { q: "What does the JavaScript method 'JSON.parse()' execute?", o: ["Converts a programmatic object into a serialized text string", "Converts a valid JSON-formatted text string into a functional JavaScript object", "Scans script files to locate structural syntax punctuation faults", "Encrypts data vectors before uploading them via HTTP post tracks"], a: 1 },
+        { q: "Which semantic tag represents the master root configuration element that contains all metadata definitions within an HTML document structure?", o: ["&lt;html&gt;", "&lt;head&gt;", "&lt;meta&gt;", "&lt;header&gt;"], a: 1 },
+        { q: "In CSS selectors, how do you target an element with the class name 'btn-action' specifically when it is hovered by the user's cursor?", o: ["btn-action.hover", ".btn-action:hover", "#btn-action:hover", "btn-action::hover"], a: 1 },
+        { q: "What does 'DOM' stand for in web engineering frameworks?", o: ["Data Optimization Matrix", "Document Object Model", "Digital Operating Module", "Distributed Object Management"], a: 1 },
+        { q: "Which JavaScript technique allows code to fetch updated server content data asynchronously in the background without reloading the entire webpage layout?", o: ["AJAX / Fetch API", "Synchronous Batch Processing", "CSS Keyframe Animations", "Service Worker caching structures"], a: 0 },
+        { q: "What is the structural function of the HTML5 '&lt;picture&gt;' element?", o: ["Embedding interactive 3D media assets with custom controls", "Providing alternative source image tracks based on device display densities or media query parameters for responsive art direction", "Compressing image file sizes dynamically inside client browser environments", "Drawing canvas vector shapes using JavaScript scripting modules"], a: 1 },
+        { q: "Which CSS layout property forces text content to clip with an ellipsis string ('...') when it overflows its container boundaries?", o: ["text-transform: ellipsis;", "text-overflow: ellipsis;", "word-wrap: break-word;", "overflow: scroll;"], a: 1 },
+        { q: "What type of function can be passed as an argument into another JavaScript function to be executed once an asynchronous operation completes?", o: ["Anonymous constructor", "Callback function", "Static method", "Recursive arrow handler"], a: 1 },
+        { q: "Which HTML5 API allows web applications to track and request the physical geographic position coordinates of a user's client terminal device?", o: ["Web Storage API", "Geolocation API", "History API", "IndexedDB mapping node"], a: 1 },
+        { q: "In CSS Grid, what does the unit configuration property 'fr' represent?", o: ["Fixed resolution spacing blocks defined by display specs", "Fractional unit representing a fraction of the available free space within the grid container box", "Font-relative scaling variables tracking root sizes", "Frames per second performance targets for web graphics"], a: 1 },
+        { q: "What type of cyberattack involves injecting malicious client scripts into trusted third-party website documents, targeting vulnerable input fields?", o: ["SQL Injection", "Cross-Site Scripting (XSS)", "Distributed Denial of Service", "Man-in-the-Middle tracking"], a: 1 },
+        { q: "Which JavaScript keyword declares a block-scoped variable whose value configuration cannot be reassigned through subsequent script lines?", o: ["var", "let", "const", "global"], a: 2 },
+        { q: "What does the HTML anchor attribute 'rel='noopener'' resolve when added to outbound external hyperlinks?", o: ["It blocks search engine crawlers from indexing the target web page link", "It provides a crucial security safeguard by preventing the newly opened external window from accessing and manipulating the original tab's DOM window context", "It encrypts target tracking cookies sent along with request pipelines", "It forces external files to download directly to local device partitions"], a: 1 },
+        { q: "Which CSS layout configuration aligns collection items vertically along the cross-axis within a standard flex container block?", o: ["justify-content", "align-items", "flex-direction", "grid-template-rows"], a: 1 },
+        { q: "What is the main function of the HTML meta viewport tag setting 'width=device-width, initial-scale=1.0'?", o: ["Enforcing desktop monitoring dimensions on mobile phone display frameworks", "Setting the layout width of the document matching the physical screen width of the device to ensure correct mobile scaling transformations", "Maximizing the download speeds of document elements over low cellular lines", "Enabling user interface zooming beyond native software maximum locks"], a: 1 },
+        { q: "Which JavaScript array method compiles all array elements into a single unified output value by executing a reducer callback function loop?", o: ["map", "filter", "reduce", "shift"], a: 2 }
+    ],
+    5: [
+        { q: "Which of the following options represents valid commands for troubleshooting network configurations on a Windows environment?", o: ["ipconfig /release, ipconfig /flushdns, ipconfig /renew", "nslookup -clear, route -delete, netsh reset", "ping -clean, ipconfig /purge, renew -ip", "ifconfig up, host -flush, ip release"], a: 0 },
+        { q: "What is the primary function of an Uninterruptible Power Supply (UPS) in a corporate server room maintenance scheme?", o: ["Supplying auxiliary backup cooling during thermal building failures", "Providing instantaneous emergency battery power to critical hardware during electrical outages to permit graceful shutdowns", "Filtering incoming malware payloads from electrical communication lines", "Distributing electrical phase loads equally across redundant server racks"], a: 1 },
+        { q: "When diagnosing a completely blank monitor screen while the computer's internal fans and status LEDs are active, what is the first logical verification step?", o: ["Reinstalling the operating system display drivers", "Checking physical cable connections and verifying the monitor's power state and input channel selection", "Replacing the primary central processing unit (CPU) chip", "Flashing the motherboard's basic input/output system (BIOS) firmware"], a: 1 },
+        { q: "Which methodology involves testing a software system's recovery processes by deliberately injecting hardware failures and network drops into a live production system?", o: ["Fault-Tree Analysis", "Chaos Engineering (e.g., Chaos Monkey)", "Fuzz Testing", "Static Code Analysis"], a: 1 },
+        { q: "What does a high 'Disk Queue Length' metric on an active server system typically indicate to a maintenance administrator?", o: ["Volatile memory (RAM) utilization is optimally low", "The storage subsystem is experiencing an I/O bottleneck, where read/write requests are backing up faster than processed", "Network interface card buffers are overflowing with incoming packets", "The processor chip is executing idle cycles waiting for system events"], a: 1 },
+        { q: "Which file system repair utility is built into Windows to scan, diagnose, and fix logical file structures and bad sectors on hard drives?", o: ["SFC /scannow", "CHKDSK", "DISM tool", "Defrag manager"], a: 1 },
+        { q: "What type of software maintenance involves refactoring clean source code to enhance readability, optimize structure, or improve maintainability without altering external behavior?", o: ["Corrective Maintenance", "Perfective Maintenance", "Adaptive Maintenance", "Emergency Maintenance"], a: 1 },
+        { q: "When troubleshooting a wireless network connection that drops intermittently only when a kitchen microwave is active, the root cause is likely:", o: ["IP address allocation collisions from the router", "Electromagnetic radio frequency interference (RFI) on the shared 2.4 GHz spectrum band", "Severe corruption of the client machine's network card drivers", "Unstable power draw from the wall outlet dropping signal strengths"], a: 1 },
+        { q: "Which cryptographic mechanism verifies that a downloaded software maintenance patch has not been tampered with or corrupted during transit?", o: ["Symmetric block cipher encryption", "Cryptographic Hash Verification (MD5/SHA-256 Checksum)", "Digital certificate validation routing", "Asymmetric key exchange protocols"], a: 1 },
+        { q: "What tool is utilized to evaluate the physical pin configurations and electrical continuity of an Ethernet RJ-45 cable to confirm it is not physically damaged?", o: ["Digital Multimeter", "Network Cable Tester", "Time-Domain Reflectometer", "Oscilloscope probe"], a: 1 },
+        { q: "In Linux systems administration, what is the function of the dmesg command tool?", o: ["Configuring local firewall rules dynamically", "Displaying the kernel ring buffer messages, highlighting hardware detection and driver errors during bootup", "Monitoring active network connections across socket layers", "Updating installed application repositories from remote sources"], a: 1 },
+        { q: "What occurs during a 'Buffer Overflow' event, which maintenance patches frequently resolve?", o: ["A database storage partition fills completely with raw transaction records", "An application writes more data into a fixed-size memory buffer than it can hold, overwriting adjacent memory spaces", "The CPU execution pipeline stalls due to synchronous processing loops", "Incoming network traffic exceeds the bandwidth capacity of an interface card"], a: 1 },
+        { q: "Which troubleshooting concept relies on verifying basic requirements first—such as checking if a device is plugged in and powered on—before diagnosing complex internal architectures?", o: ["Top-down troubleshooting model", "Bottom-up / Layer 1 verification model", "Outside-in analysis technique", "Symptom-based heuristic matching"], a: 1 },
+        { q: "What is the purpose of configuring a 'RAID 1' mirror array within an enterprise storage subsystem?", o: ["Maximizing read/write bandwidth by striping data blocks across separate drives without parity", "Providing complete hardware fault tolerance by duplicating all data across two drives simultaneously", "Compressing archival records to optimize available storage bytes", "Implementing automatic encryption on data sectors at the hardware layer"], a: 1 },
+        { q: "When a Windows system fails to boot normally due to corrupted third-party driver installations, what mode should be used to troubleshoot and uninstall the driver?", o: ["Recovery Console Prompt Mode", "Safe Mode", "Normal Boot with Logged Events", "Low-Resolution Video Calibration Mode"], a: 1 },
+        { q: "Which automated testing practice involves continuously feeding malformed, randomized, or unexpected input strings into a software application to identify memory crashes?", o: ["Static Analysis", "Fuzzing / Fuzz Testing", "Unit Testing validation", "Performance Load profiling"], a: 1 },
+        { q: "What component must be replaced if a computer system repeatedly loses its correct system time and date configurations whenever it is unplugged from wall power?", o: ["Primary solid-state storage drive", "CMOS Motherboard Battery (CR2032)", "Central processing unit cooling fan", "Main system power supply unit (PSU)"], a: 1 },
+        { q: "In cloud infrastructure maintenance, 'Infrastructure as Code' (IaC) prevents what common issue where manual configuration adjustments cause servers to deviate from standard baselines?", o: ["Memory Leakage bugs", "Configuration Drift", "Database deadlock states", "Network packet fragmentation"], a: 1 },
+        { q: "What does a steady amber or orange status LED on a enterprise server network interface card (NIC) typically indicate?", o: ["A high-speed multi-gigabit link is fully active", "The connection is operating at a lower negotiated speed or experiencing link faults", "Complete absence of any physical cable connectivity", "The network card is currently executing a hardware self-test"], a: 1 },
+        { q: "Which maintenance metric tracks the statistical likelihood that a hardware component will perform its required function without failure under specified conditions for a defined period?", o: ["Maintainability index", "Reliability index", "Serviceability rating", "Availability metric"], a: 1 },
+        { q: "What tool is used to monitor real-time database query execution durations to isolate slow-performing queries causing application latency spikes?", o: ["Database Transaction Log analyzer", "Database Profiler / Slow Query Log manager", "Relational Entity Schema designer", "Data warehouse extraction workflow tool"], o: ["Database Transaction Log analyzer", "Database Profiler / Slow Query Log manager", "Relational Entity Schema designer", "Data warehouse extraction workflow tool"], a: 1 },
+        { q: "When troubleshooting an office network print queue where multiple documents are stuck with 'Printing' status but nothing outputs, what is the best initial software remedy?", o: ["Completely reformatting the printer's local storage memory", "Restarting the operating system's Print Spooler service and clearing the print queue folder", "Replacing the physical interface cables connected to the printer unit", "Re-compiling the printer driver source code blocks"], a: 1 },
+        { q: "Which security practice involves scanning a system's network ports and software versions against a library of known exploits to identify missing patches?", o: ["Penetration testing injection", "Vulnerability Scanning", "Code structural auditing", "Dynamic analysis profiling"], a: 1 },
+        { q: "What does the 'SFC /scannow' command achieve within a Windows maintenance environment?", o: ["Defragmenting all attached mechanical storage drives", "Scanning and verifying the cryptographic integrity of all protected system files, replacing corrupted ones with clean copies", "Backing up active user registry configuration keys", "Optimizing startup execution sequences to reduce boot latency"], a: 1 },
+        { q: "What problem is occurring when an administrator can ping a remote server's numeric IP address successfully but cannot access it via its domain name string?", o: ["Hardware network interface card failure on the client host", "Domain Name System (DNS) resolution failure", "Active blocking of packets by an upstream firewall", "IP address allocation conflict inside the local network switch"], a: 1 },
+        { q: "Which system architecture feature utilizes redundant, hot-swappable power supplies to ensure a server remains functional if one power module burns out?", o: ["High efficiency distribution blocks", "Fault Tolerance through structural redundancy", "Software-defined energy management", "Distributed capacity clustering"], a: 1 },
+        { q: "What is the role of a 'Post-Mortem' meeting following the resolution of a critical production system failure?", o: ["Formally assigning legal blame to individual development teams", "Analyzing the root causes of the incident, documenting response actions, and creating preventive strategies for the future", "Reviewing financial expenditures incurred during the maintenance cycle", "Planning the user interface changes for the next product launch"], a: 1 },
+        { q: "Which network diagnostic tool displays active TCP network socket connections, listening ports, and routing table statistics on a local computer?", o: ["nslookup", "netstat", "ping", "ipconfig"], a: 1 },
+        { q: "What component is most likely failing when an enterprise server suddenly turns off completely after ten minutes of heavy computation, but restarts immediately after cooling down?", o: ["Corrupt sectors within volatile RAM registers", "Thermal CPU overload resulting from dynamic fan structural failure or dried thermal paste interface bounds", "Improper network port channel routing configurations", "A physical break within the backup fiber optic network link"], a: 1 },
+        { q: "Which configuration metric outlines the statistically calculated mean duration required to isolate and fix a hardware failure point to operational status?", o: ["MTBF (Mean Time Between Failures)", "MTTR (Mean Time To Repair)", "RTO (Recovery Time Objective)", "SLA Availability Index"], a: 1 },
+        { q: "What type of software upgrade is explicitly engineered to quickly isolate and close a verified active remote security vulnerability exploit path?", o: ["Feature Enhancement Pack", "Security Patch / Hotfix", "Beta structural framework update", "Database data normalization schema"], a: 1 },
+        { q: "When an external hard drive displays input/output errors during data transfers, which hardware test tool scans physical drive surfaces directly?", o: ["Windows Task Manager monitors", "Hard Drive Manufacturer Diagnostic S.M.A.R.T. Utility", "System File Checker frameworks", "Local network link tracking ping tool"], a: 1 },
+        { q: "What is the best protection methodology against server data losses caused by localized physical facility fires or natural disasters?", o: ["Implementing RAID 5 internal drive mirrors across on-premise racks", "Maintaining regular, automated off-site or cloud-replicated server backups", "Upgrading facility electrical power line stabilization filters", "Refactoring database architectures into microservice frameworks"], a: 1 },
+        { q: "Which specialized testing equipment measures electrical voltage variations, current parameters, and continuity resistances within power circuits?", o: ["Loop Network Cable Tester", "Digital Multimeter", "Oscilloscope frequency terminal", "Logic Probe logic node"], a: 1 },
+        { q: "What problem is caused when an application allocation routine leaves allocated RAM blocks un-deallocated after processing data loops?", o: ["Database deadlock states", "Memory Leak anomalies leading to systemic resource depletion", "Hard drive sector configuration drops", "Network connection interface drops"], a: 1 },
+        { q: "In centralized active directories, what is the effect of applying user 'Group Policies' configuration schemes?", o: ["Accelerating individual computer processing clock loops", "Enforcing uniform computing security and software baselines across thousands of networked client machines", "Formatting website content designs dynamically across screens", "Backing up data archives onto local device hard drives"], a: 1 },
+        { q: "What type of maintenance is executing when administrators replace server internal cooling hardware fans before they hit calculated operational failure lifespans?", o: ["Corrective Maintenance", "Preventive Maintenance", "Reactive maintenance cycles", "Adaptive tuning routines"], a: 1 },
+        { q: "Which tool isolates network connection disruptions by mapping the explicit hops and routers a data packet traverses to targets?", o: ["ping", "traceroute / tracert", "netstat", "nslookup"], a: 1 },
+        { q: "What does the technical metric 'S.M.A.R.T.' track on modern non-volatile storage drives?", o: ["Software management and rapid transaction metrics", "Self-Monitoring, Analysis, and Reporting Technology monitoring parameters tracking hard drive physical health indicators", "Symmetric media analytical storage routing templates", "System memory allocation runtime variables"], a: 1 },
+        { q: "When troubleshooting an active client node that completely lacks network access, what diagnostic step verifies the local TCP/IP stack configuration functionality?", o: ["Pinging the corporate remote default gateway server", "Pinging the loopback IP address (127.0.0.1)", "Flashing the motherboard BIOS system settings", "Re-terminating the physical workspace wall cable drops"], a: 1 },
+        { q: "What tool allows remote IT professionals to securely access and view an employee's display interface to resolve local OS setting configuration issues?", o: ["Database transaction management suite", "Remote Desktop Protocol (RDP) / Remote Assistance software", "Version control tracking terminal interface", "Packet analyzer network frame tracker"], a: 1 },
+        { q: "Which metric tracks the target maximum permissible age of file data backups that can be restored during major infrastructure disasters?", o: ["RTO (Recovery Time Objective)", "RPO (Recovery Point Objective)", "MTBF metric threshold", "Uptime validation guarantee"], a: 1 },
+        { q: "What occurs during a 'Blue Screen of Death' (BSOD) system crash event on a Windows server host?", o: ["The user interface background image file is accidentally deleted", "The operating system encounters a critical kernel error it cannot safely recover from and halts execution to protect hardware integrity", "A database structure completes a massive reporting run cycle", "The local local network switch enters an automated reboot mode"], a: 1 },
+        { q: "Which procedure describes checking electronic hardware modules using anti-static wristbands?", o: ["Accelerating electrical flow paths across motherboard chips", "Preventing electrostatic discharge (ESD) from damaging sensitive electronic microcircuitry components during physical handling", "Filtering incoming voltage spikes from electrical main drops", "Enabling quick hot-swapping configurations on data drives"], a: 1 },
+        { q: "What tool is designed to decode and inspect individual network packet frames to resolve application-layer data drop issues?", o: ["Network command ping prompt", "Packet Sniffer / Protocol Analyzer (e.g., Wireshark)", "System registry configuration tool", "Relational database indexing wizard"], a: 1 },
+        { q: "When an operating system displays an 'Inaccessible Boot Device' error alert on startup, what is the most likely structural failure source?", o: ["The monitor display cable link is loosely connected", "The computer storage drive containing the system boot sector has experienced corruption or disconnection", "The user network profile account password has expired", "Background application updates failed to download completely"], a: 1 },
+        { q: "What does an IT deployment infrastructure 'Rollback Plan' provide?", o: ["An automated code instruction block that deletes historical user profile folders", "A predefined technical strategy to revert a system update to its previous stable state if a live deployment experiences critical issues", "A structural chart mapping employee management chains", "A compression methodology to minimize server disk space sizes"], a: 1 },
+        { q: "Which maintenance approach evaluates asset operational telemetry continuously to predict structural breakdowns before they occur?", o: ["Reactive maintenance blocks", "Predictive Maintenance using automated monitoring frameworks", "Manual corrective patching cycles", "Static time scheduled resets"], a: 1 },
+        { q: "What does a 'Media Access Control' (MAC) address identify?", o: ["The target layout coordinate of a web browser form button", "The unique physical hardware address burned into a network interface card at the manufacturing facility", "The cryptographic verification token used in active directory logins", "The memory location tracking the current thread execution point"], a: 1 },
+        { q: "Which device checks corporate network environments by capturing and filtering incoming communication packets based on preset rule lists?", o: ["Network Local Switch", "Firewall", "Uninterruptible Power Module", "Analog Continuity Tester"], a: 1 }
+    ],
+    6: [
+        { q: "What computer science term describes an elegant programming function that calls itself within its own definition to solve a smaller instance of the same problem?", o: ["Iteration", "Recursion", "Encapsulation", "Polymorphism"], a: 1 },
+        { q: "In object-oriented programming, what principle involves hiding the internal implementation details of an object and exposing data only through public methods?", o: ["Inheritance", "Encapsulation", "Polymorphism", "Abstraction"], a: 1 },
+        { q: "Which data structure operates strictly on a Last-In, First-Out (LIFO) access model for data insertions and deletions?", o: ["Queue", "Stack", "Linked List", "Binary Tree"], a: 1 },
+        { q: "What is the time complexity of searching for an element in a balanced Binary Search Tree (BST) containing 'n' elements in the worst-case scenario?", o: ["O(1)", "O(log n)", "O(n)", "O(n log n)"], a: 1 },
+        { q: "In strongly-typed programming languages, what type of compilation error occurs when a developer attempts to assign a text string variable to an integer variable?", o: ["Syntax Error", "Type Mismatch Error / Type Error", "Runtime Exception", "Logical Anomaly"], a: 1 },
+        { q: "Which programming paradigm organizes software engineering structures around data objects rather than operational functions or logic steps?", o: ["Functional Programming", "Object-Oriented Programming (OOP)", "Procedural Programming", "Declarative Programming"], a: 1 },
+        { q: "What does a compiler do that distinguishes it fundamentally from a standard code interpreter?", o: ["It executes the source code line-by-line in real time", "It translates the entire source code file into a standalone machine-readable executable file before runtime", "It highlights logical flaws within conditional branch blocks", "It automatically designs relational database tables from code parameters"], a: 1 },
+        { q: "Which data structure utilizes a mathematical function to map key identifiers to specific array indices, providing near-constant O(1) time complexity for lookups?", o: ["Red-Black Tree", "Hash Table / Dictionary", "Doubly Linked List", "Min-Heap Queue"], a: 1 },
+        { q: "In object-oriented programming, the ability of distinct object classes to respond uniquely to the exact same method signature call is termed:", o: ["Inheritance", "Polymorphism", "Encapsulation", "Aggregation"], a: 1 },
+        { q: "What is a 'Null Pointer Exception' error condition?", o: ["An application attempts to execute an invalid arithmetic division by zero", "An application attempts to access or invoke methods on an object reference pointer that points to no allocated memory location (null)", "A loop structure fails to establish a proper conditional termination exit point", "A variable name violates the structural syntax grammar rules of a language"], a: 1 },
+        { q: "Which operator is universally used in programming logic to compute the remainder of an integer division operation?", o: ["Division operator (/)", "Modulo operator (%)", "Exponentiation operator (^)", "Bitwise AND operator (&)"], a: 1 },
+        { q: "What type of programming loop structure is explicitly guaranteed to execute its code block at least once before evaluating its conditional exit expression?", o: ["for loop", "do-while loop", "while loop", "for-in loop"], a: 1 },
+        { q: "In version control systems like Git, what command merges changes from a remote repository into a local working branch by combining fetch and merge routines?", o: ["git push", "git pull", "git commit", "git checkout"], a: 1 },
+        { q: "Which sorting algorithm uses a divide-and-conquer strategy by recursively partitioning an array around a chosen pivot element?", o: ["Bubble Sort", "Quick Sort", "Insertion Sort", "Selection Sort"], a: 1 },
+        { q: "What is the role of an 'Abstract Class' in object-oriented programming design hierarchies?", o: ["It serves as a direct blueprint for creating instance objects with default configurations", "It cannot be instantiated directly and exists solely to be inherited by subclass extensions that provide concrete implementations", "It restricts all internal methods to executing entirely inside a single background processing thread", "It automatically encrypts variable names during code compilation steps"], a: 1 },
+        { q: "In computer memory management, what is the role of the 'Garbage Collector' process?", o: ["Erasing syntactically incorrect source code comments", "Automatically identifying and reclaiming dynamically allocated heap memory spaces that are no longer referenced by the application", "Defragmenting storage blocks on physical solid-state drives", "Terminating frozen background execution threads causing performance lag"], a: 1 },
+        { q: "Which boolean logic operator returns true only if both distinct input expressions evaluate to true simultaneously?", o: ["OR operator (||)", "AND operator (&&)", "NOT operator (!)", "XOR operator (^)"], a: 1 },
+        { q: "What is the characteristic structure of a Linear Queue data structure?", o: ["First-In, First-Out (FIFO) data entry and exit processing", "Last-In, First-Out (LIFO) access data paths", "Key-value mapping array indices", "Parent-child node hierarchical branching arrays"], a: 0 },
+        { q: "In programming terminology, what constitutes a 'Logical Error' within a compiled application?", o: ["The program fails to compile due to missing punctuation tags", "The program compiles and runs without crashing, but produces incorrect or unexpected outputs due to flawed algorithmic reasoning", "The application throws an OutOfMemory exception during operational execution", "The runtime environment rejects external user inputs because of data types"], a: 1 },
+        { q: "Which memory allocation space is utilized for managing tracking variables, local function parameters, and return execution points via standard LIFO tracking?", o: ["Heap Memory", "Stack Memory", "Virtual Swap Disk", "Static Register Array"], a: 1 },
+        { q: "What does the 'Scope' of a variable define within a structured programming codebase?", o: ["The maximum size in bytes the variable can occupy in memory", "The context and region of a program codebase where a specific variable identifier is accessible and valid", "The speed at which the variable's data can be modified by arithmetic loops", "The network transport encryption layer used when sending the variable data"], a: 1 },
+        { q: "In a linked list data structure, what does each individual data node structurally contain?", o: ["A key hash identifier and its corresponding data content value", "The actual data payload and a pointer reference to the next node sequence in the list", "Left child, right child, and parent structural object references", "A collection of array indices mapped to sequential memory addresses"], a: 1 },
+        { q: "What programming paradigm avoids mutable state configurations and side effects by relying heavily on pure mathematical functions?", o: ["Imperative Programming", "Functional Programming", "Object-Oriented Design", "Structured Event-Driven Architecture"], a: 1 },
+        { q: "Which keyword is utilized in many languages (like Java and C++) to handle runtime exceptions by executing a cleanup block regardless of whether an error occurred?", o: ["catch", "finally", "throw", "try"], a: 1 },
+        { q: "What is the time complexity of accessing an array element directly using its specific known index value?", o: ["O(log n)", "O(1)", "O(n)", "O(n²)"], a: 1 },
+        { q: "In software development, what does the DRY principle mandate?", o: ["Document Realtime Yields (Ensure thorough code testing logs)", "Don't Repeat Yourself (Minimize code duplication by abstracting common logic into reusable modules)", "Deploy Reliable Yields (Prioritize security over execution speeds)", "Design Rational Yields (Incorporate relational tables in data logic)"], a: 1 },
+        { q: "What is the key structural distinction between a class and an object in OOP?", o: ["A class is a dynamic runtime instance, while an object is a static compiler blueprint", "A class is the structural template or blueprint definition, while an object is an active instance of that class created in memory", "Classes manage string data formats, while objects handle complex numeric structures", "A class occupies physical heap space, while objects exist only during compilation"], a: 1 },
+        { q: "Which search algorithm systematically divides a sorted array in half repeatedly to locate a target value, exhibiting O(log n) performance?", o: ["Linear Search", "Binary Search", "Depth-First Search", "Breadth-First Search"], a: 1 },
+        { q: "What does it mean if an argument is passed to a function 'By Reference' rather than 'By Value'?", o: ["A complete duplicate copy of the data argument is allocated in memory", "The function receives the actual memory address of the argument, meaning changes made inside the function alter the original variable", "The variable data is converted to a text string format before processing", "The argument can only be accessed using asynchronous promise chains"], a: 1 },
+        { q: "Which sorting algorithm repeatedly steps through a list, compares adjacent elements, and swaps them if they are in the wrong order, running in O(n²) time?", o: ["Merge Sort", "Bubble Sort", "Heap Sort", "Quick Sort"], a: 1 },
+        { q: "What design pattern ensures that a class has exactly one single global instance and provides a global point of access to it across an application?", o: ["Factory Pattern", "Singleton Pattern", "Observer Pattern", "Strategy Pattern"], a: 1 },
+        { q: "In database connectivity, what tool provides a standardized API translation layer allowing code programs to execute queries uniformly across different SQL databases?", o: ["Object-Relational Model (ORM)", "Database Driver (e.g., JDBC / ODBC)", "Enterprise Service Bus (ESB)", "Structured API Router Node"], a: 1 },
+        { q: "What is the function of an 'Index Variable' within a standard 'for' loop structure?", o: ["It stores the encryption keys for the loop block logic", "It tracks and increments the loop execution iterations to control when the loop meets its termination boundary", "It maps loop outputs directly into remote server databases", "It converts numeric calculations into corresponding string values"], a: 1 },
+        { q: "What type of data structure is non-linear and consists of a collection of nodes connected by directed or undirected paths called edges, without hierarchical parent restrictions?", o: ["Binary Search Tree", "Graph", "Doubly Linked List", "Max-Heap Array"], a: 1 },
+        { q: "In multi-threaded programming, what serious problem occurs when two threads are blocked indefinitely, each waiting for a resource held by the other?", o: ["Race Condition", "Deadlock", "Thread Starvation", "Priority Inversion"], a: 1 },
+        { q: "What is the primary function of an Integrated Development Environment (IDE)?", o: ["Hosting compiled application binary files on cloud computing platforms", "Providing a comprehensive software suite containing a text editor, compiler/interpreter, and debugging tools to streamline coding", "Translating user graphical wireframes directly into normalized database tables", "Monitoring production server CPU utilization metrics"], a: 1 },
+        { q: "Which keyword is used in inheritance hierarchies to call a constructor or method defined within an immediate parent superclass?", o: ["this", "super", "parent", "base"], a: 1 },
+        { q: "What is 'Code Refactoring'?", o: ["Translating source code from one language to another completely new syntax framework", "Restructuring existing computer code without changing its external behavior to improve internal non-functional properties", "Disabling broken application components to preserve core service functions", "Encrypting source files before committing them to public code repositories"], a: 1 },
+        { q: "Which data type is optimized specifically for storing single, individual alphanumeric characters within a fixed memory space?", o: ["String", "Character (char)", "Float", "Boolean"], a: 1 },
+        { q: "What condition triggers an infinite recursion crash (Stack Overflow) in a recursive function routine?", o: ["The function receives an invalid argument datatype format", "The recursive function lacks a proper base case condition, or the base case is never satisfied during execution", "The heap memory allocation exceeds physical RAM capacities", "Multiple processing threads access the recursive logic simultaneously"], a: 1 },
+        { q: "Which development methodology emphasizes writing automated unit test cases before writing the actual functional application source code?", o: ["Agile / Scrum Model", "Test-Driven Development (TDD)", "Waterfall Development Model", "Rapid Application Prototyping (RAD)"], a: 1 },
+        { q: "In binary logical representations, what numeric value universally represents a Boolean 'False' condition state?", o: ["1", "0", "-1", "Null pointer string"], a: 1 },
+        { q: "What is the time complexity of appending an element to the end of a dynamic array, assuming no internal resize operation is triggered?", o: ["O(n)", "O(1)", "O(log n)", "O(n log n)"], a: 1 },
+        { q: "Which principle of object-oriented design state that a software module should be open for extension but closed for modification?", o: ["Single Responsibility Principle", "Open/Closed Principle", "Liskov Substitution Principle", "Dependency Inversion Principle"], a: 1 },
+        { q: "What is a 'Syntax Error' in programming?", o: ["An algorithmic flaw that calculates incorrect mathematical results", "A violation of the formal grammatical layout rules of the programming language that prevents code compilation", "A runtime crash triggered by entering invalid user data strings", "An access violation error caused by targeting protected system memory blocks"], a: 1 },
+        { q: "Which data structure utilizes a priority ranking metric to dynamically serve elements with the highest priority first, regardless of insertion order?", o: ["Circular Queue", "Priority Queue / Heap", "Standard Stack", "Linear Array Link"], a: 1 },
+        { q: "What is the primary technical benefit of utilizing 'Functions' or 'Methods' within a large programming application layout?", o: ["They accelerate code compilation down to machine code execution speeds", "They break complex code into smaller, modular, and reusable blocks, enhancing clarity and maintainability", "They automatically validate database data types at compilation limits", "They encrypt runtime memory values against physical side-channel tracking"], a: 1 },
+        { q: "In multi-threaded architectures, a 'Race Condition' is a vulnerability where:", o: ["A processing thread runs too fast and runs out of allocated storage memory", "The software output depends unpredictably on the execution sequence or timing of uncontrollable multi-threaded actions", "The database management engine blocks incoming query update loops", "An application fails to process inputs because of low connection speeds"], a: 1 },
+        { q: "Which keyword in loop logic instantly terminates the execution of the entire surrounding loop structure and jumps to the next line of code outside the loop?", o: ["continue", "break", "exit", "return"], a: 1 },
+        { q: "What data structure uses a root node and child nodes where every parent node has at most two children, with left values smaller and right values larger?", o: ["Graph mesh layout", "Binary Search Tree (BST)", "Multi-dimensional Matrix Grid", "Doubly Linked List Array"], a: 1 }
+    ]
+};
+
+// Application State Management Engine
+let activeUnit = 1;
+let currentQuestionIndex = 0;
+let userScore = 0;
+let currentSelectionsLog = []; 
+let isStepAnswered = false;
+
+const unitNamesMap = {
+    1: "Information Systems",
+    2: "Emerging Technologies",
+    3: "Database Systems",
+    4: "Web Authoring",
+    5: "Maintenance & Troubleshooting",
+    6: "Fundamentals of Programming"
+};
+
+function switchUnit(unitId) {
+    activeUnit = parseInt(unitId);
+    
+    // Manage CSS tab layouts across view selectors
+    const tabs = document.querySelectorAll('.unit-tab');
+    tabs.forEach((tab, index) => {
+        if ((index + 1) === activeUnit) {
+            tab.classList.add('active');
+            tab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        } else {
+            tab.classList.remove('active');
+        }
+    });
+    
+    resetQuiz();
+}
+
+function resetQuiz() {
+    currentQuestionIndex = 0;
+    userScore = 0;
+    currentSelectionsLog = [];
+    isStepAnswered = false;
+    
+    document.getElementById('quizContainer').style.display = "block";
+    document.getElementById('resultsContainer').style.display = "none";
+    document.getElementById('reviewContainer').style.display = "none";
+    
+    renderCurrentQuestion();
+}
+
+function renderCurrentQuestion() {
+    isStepAnswered = false;
+    document.getElementById('nextBtn').disabled = true;
+    
+    const activeQuestionsList = questionsPool[activeUnit];
+    const item = activeQuestionsList[currentQuestionIndex];
+    
+    // UI Label Elements Mapping
+    document.getElementById('topicName').innerText = unitNamesMap[activeUnit];
+    document.getElementById('questionCount').innerText = `Question ${currentQuestionIndex + 1} of ${activeQuestionsList.length}`;
+    document.getElementById('questionText').innerHTML = item.q;
+    
+    // Render responsive option inputs
+    const optionsContainer = document.getElementById('optionsList');
+    optionsContainer.innerHTML = '';
+    
+    const percentageFill = ((currentQuestionIndex + 1) / activeQuestionsList.length) * 100;
+    document.getElementById('progressFill').style.width = `${percentageFill}%`;
+    
+    item.o.forEach((optionValue, idx) => {
+        const optBtn = document.createElement('button');
+        optBtn.className = 'option-btn';
+        optBtn.innerText = optionValue;
+        optBtn.onclick = () => handleSelection(optBtn, idx, item.a);
+        optionsContainer.appendChild(optBtn);
+    });
+}
+
+function handleSelection(selectedButton, chosenIdx, correctIdx) {
+    if (isStepAnswered) return;
+    isStepAnswered = true;
+    
+    currentSelectionsLog.push(chosenIdx);
+    const allOptionButtons = document.getElementById('optionsList').getElementsByClassName('option-btn');
+    
+    if (chosenIdx === correctIdx) {
+        selectedButton.classList.add('correct');
+        userScore++;
+    } else {
+        selectedButton.classList.add('wrong');
+        allOptionButtons[correctIdx].classList.add('correct');
+    }
+    
+    document.getElementById('nextBtn').disabled = false;
+}
+
+function handleNext() {
+    const totalModuleQuestions = questionsPool[activeUnit].length;
+    if (currentQuestionIndex < (totalModuleQuestions - 1)) {
+        currentQuestionIndex++;
+        renderCurrentQuestion();
+    } else {
+        displayAssessmentResults();
+    }
+}
+
+function displayAssessmentResults() {
+    document.getElementById('quizContainer').style.display = "none";
+    document.getElementById('resultsContainer').style.display = "block";
+    
+    const totalQuestions = questionsPool[activeUnit].length;
+    document.getElementById('scoreDisplay').innerText = `${userScore} / ${totalQuestions}`;
+    
+    const ratio = userScore / totalQuestions;
+    let tierText = "Excellent Mastery Profile!";
+    if (ratio < 0.5) tierText = "Review Materials and Try Again.";
+    else if (ratio < 0.8) tierText = "Competent Standard Met.";
+    
+    document.getElementById('tierDisplay').innerText = tierText;
+}
+
+function showReview() {
+    document.getElementById('resultsContainer').style.display = "none";
+    document.getElementById('reviewContainer').style.display = "block";
+    
+    const reviewList = document.getElementById('reviewList');
+    reviewList.innerHTML = '';
+    
+    const questions = questionsPool[activeUnit];
+    questions.forEach((item, index) => {
+        const div = document.createElement('div');
+        div.className = 'review-item';
+        div.innerHTML = `
+            <div class="review-q">${index + 1}. ${item.q}</div>
+            <div class="review-a">✅ Core Answer: ${item.o[item.a]}</div>
+        `;
+        reviewList.appendChild(div);
+    });
+}
+
+function backToResults() {
+    document.getElementById('reviewContainer').style.display = "none";
+    document.getElementById('resultsContainer').style.display = "block";
+}
+
+// Inline Native Service Worker for PWA Offline Integration Architecture
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const pwaBlob = new Blob([`
+            const CACHE_NAME = 'it-support-quiz-v3';
+            const assets = ['index.html'];
+            self.addEventListener('install', e => e.waitUntil(caches.open(CACHE_NAME).then(c => c.addAll(assets))));
+            self.addEventListener('fetch', e => e.respondWith(caches.match(e.request).then(r => r || fetch(e.request))));
+        `], { type: 'application/javascript' });
+        
+        navigator.serviceWorker.register(URL.createObjectURL(pwaBlob))
+            .then(() => {
+                // Display install buttons selectively if running through browser contexts
+                if(!window.matchMedia('(display-mode: standalone)').matches) {
+                    document.getElementById('installBtn').style.display = "block";
+                }
+            })
+            .catch(err => console.error('PWA infrastructure error context:', err));
+    });
+}
+
+// Native installation triggers tracking
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'block';
+});
+
+document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+        deferredPrompt = null;
+    }
+});
+
+window.onload = () => switchUnit(1);
+</script>
+</body>
+</html>
