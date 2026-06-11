@@ -1,4 +1,4 @@
-const CACHE_NAME = 'it-quiz-v1';
+const CACHE_NAME = 'it-support-quiz-v1';
 const ASSETS = [
   './',
   './index.html',
@@ -6,29 +6,31 @@ const ASSETS = [
   './1758823260347.jpg'
 ];
 
-// Install Service Worker and Cache Assets
+// Install Event
 self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll(ASSETS);
-    }).then(() => self.skipWaiting())
+    })
   );
 });
 
-// Activate and Clean Old Caches
+// Activate Event
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keys) => {
       return Promise.all(
         keys.map((key) => {
-          if (key !== CACHE_NAME) return caches.delete(key);
+          if (key !== CACHE_NAME) {
+            return caches.delete(key);
+          }
         })
       );
-    }).then(() => self.clients.claim())
+    })
   );
 });
 
-// Fetch Assets from Cache Offline First
+// Fetch Event for Offline Functionality
 self.addEventListener('fetch', (e) => {
   e.respondWith(
     caches.match(e.request).then((cachedResponse) => {
@@ -36,4 +38,3 @@ self.addEventListener('fetch', (e) => {
     })
   );
 });
-
