@@ -220,7 +220,7 @@
         </div>
         <h2 style="margin-bottom: 8px;">IT Support Quizzes</h2>
         <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 20px; max-width: 420px;">
-             (Grades 11 & 12).
+            Comprehensive interactive structural testing engine for technical streams (Grades 11 & 12).
         </p>
         <button class="btn" style="width: 200px; margin-top: 0;" onclick="initiateQuizRun()">Start Selected Topic</button>
     </div>
@@ -513,6 +513,16 @@ function showReview() {
 function backToResults() {
     document.getElementById('reviewContainer').classList.remove('active-view');
     document.getElementById('resultsContainer').classList.add('active-view');
+}
+
+function removeApplicationCache() {
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (registrations) {
+            for (let registration of registrations) {
+                registration.unregister();
+            }
+        });
+    }
 }
 
 function resetQuiz() {
