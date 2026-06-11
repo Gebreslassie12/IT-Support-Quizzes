@@ -1,12 +1,10 @@
 {
   "name": "IT Support Quizzes",
   "short_name": "IT Quizzes",
-  "description": "Comprehensive IT Support Quizzes for Grades 11 and 12.",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#1e293b",
+  "background_color": "#0f172a",
   "theme_color": "#1e293b",
-  "orientation": "portrait",
   "icons": [
     {
       "src": "1758823260347.jpg",
